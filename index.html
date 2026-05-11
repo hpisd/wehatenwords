@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitreous Corp | Fully Integrated</title>
+    <style>
+        :root { --neon-red: #ff003c; --terminal: #00ff41; --bg: #050505; --panel: #0f0f11; --border: #222; --blue-print: #0077ff; }
+        * { box-sizing: border-box; }
+        body { background-color: var(--bg); color: #ccc; font-family: 'Segoe UI', monospace; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #game-container { display: flex; width: 1450px; height: 900px; background: var(--panel); border: 1px solid var(--border); box-shadow: 0 0 50px rgba(0,0,0,1); position: relative; }
+        
+        #harvest-zone { width: 420px; background: #000; border-right: 2px solid var(--border); display: flex; flex-direction: column; padding: 25px; }
+        .logo { font-size: 26px; font-weight: 900; letter-spacing: 8px; color: #fff; text-shadow: 0 0 10px var(--neon-red); }
+        .stat-val { font-size: 34px; font-weight: bold; color: #eee; font-family: 'Courier New'; }
+
+        #clicker-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .bio-img-wrapper { width: 320px; height: 320px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.1s; background: radial-gradient(circle, rgba(255,0,60,0.1) 0%, transparent 70%); border-radius: 50%; }
+        .bio-img-wrapper:active { transform: scale(0.95); }
+        .bio-img-wrapper img { max-width: 85%; max-height: 85%; filter: drop-shadow(0 0 20px var(--neon-red)); pointer-events: none; }
+
+        #market-zone { flex-grow: 1; display: flex; flex-direction: column; background: #080808; }
+        .main-tabs { display: flex; background: #000; border-bottom: 1px solid var(--border); }
+        .tab { flex: 1; padding: 20px; text-align: center; cursor: pointer; font-size: 11px; font-weight: 900; color: #444; text-transform: uppercase; letter-spacing: 2px; }
+        .tab.active { color: #fff; background: #0f0f11; }
+        .tab.active[onclick*="infra"] { border-bottom: 3px solid var(--terminal); }
+        .tab.active[onclick*="blueprints"] { border-bottom: 3px solid var(--blue-print); }
+        .tab.active[onclick*="research"] { border-bottom: 3px solid var(--neon-red); }
+        
+        .upgrade-container { display: none; padding: 20px; overflow-y: auto; flex-grow: 1; }
+        .upgrade-container.active { display: block; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+        .card { 
+            background: #111; border: 1px solid #1d1d1d; padding: 12px; display: flex; flex-direction: column; 
+            justify-content: center; cursor: pointer; transition: filter 0.2s, opacity 0.2s, background 0.2s; min-height: 95px;
+            filter: grayscale(1) brightness(0.4); opacity: 0.5;
+        }
+        .card.affordable { filter: grayscale(0) brightness(1); opacity: 1; border-color: #333; }
+        .card.affordable:hover { background: #1a1a1a; box-shadow: inset 0 0 0 1px #555; }
+        .card.owned { filter: grayscale(0) brightness(1); opacity: 1; border-color: var(--terminal); background: rgba(0, 255, 65, 0.05); cursor: default; }
+        .card.bp-card.owned { border-color: var(--blue-print); background: rgba(0, 119, 255, 0.1); }
+
+        .name { font-size: 11px; font-weight: bold; color: #fff; text-transform: uppercase; }
+        .impact { font-size: 10px; font-weight: bold; margin-top: 4px; }
+        .cost { font-size: 12px; font-weight: bold; font-family: 'Courier New'; }
+        .infra-cost { color: var(--terminal); }
+        .bp-cost { color: var(--blue-print); }
+        .res-cost { color: var(--neon-red); }
+
+        .sub-tabs { display: flex; background: #111; gap: 2px; padding: 5px; margin-bottom: 10px; }
+        .sub-tab { padding: 8px 12px; font-size: 10px; background: #000; color: #444; cursor: pointer; border: 1px solid #222; }
+        .sub-tab.active { color: var(--neon-red); border-color: var(--neon-red); }
+
+        .float { position: absolute; pointer-events: none; color: #fff; font-weight: bold; animation: floatUp 0.6s forwards; font-size: 22px; z-index: 1000; }
+        @keyframes floatUp { to { transform: translateY(-120px); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <aside id="harvest-zone">
+        <div class="logo">VITREOUS</div>
+        <div style="margin-top: 40px;"><div style="font-size: 11px; color: #555;">LIQUID CAPITAL</div><div class="stat-val" id="cash">$0</div></div>
+        <div style="margin-top: 20px;"><div style="font-size: 11px; color: #555;">PASSIVE REVENUE</div><div class="stat-val" id="gps" style="color: var(--terminal);">$0/s</div></div>
+        <div id="clicker-area">
+            <div style="width:100%; display:flex; justify-content:space-between; font-size:11px; margin-bottom:15px; color:#555;">
+                <span onclick="changeAsset(-1)" style="cursor:pointer;">◄ PREV</span>
+                <b id="asset-name">SYNCING...</b>
+                <span onclick="changeAsset(1)" style="cursor:pointer;">NEXT ►</span>
+            </div>
+            <div class="bio-img-wrapper" onclick="clickAsset(event)" id="img-target"></div>
+            <div id="lock-overlay" style="margin-top: 20px;"></div>
+            <div style="width:100%; height:4px; background:#111; margin-top:20px;"><div id="prog-fill" style="width:0%; height:100%; background:var(--neon-red);"></div></div>
+        </div>
+    </aside>
+
+    <main id="market-zone">
+        <nav class="main-tabs">
+            <div class="tab active" onclick="setMainTab('infra')">Logistics</div>
+            <div class="tab" onclick="setMainTab('blueprints')">Blueprints</div>
+            <div class="tab" onclick="setMainTab('research')">R&D Labs</div>
+        </nav>
+        <div id="infra-panel" class="upgrade-container active"><div class="grid" id="logistics-grid"></div></div>
+        <div id="blueprints-panel" class="upgrade-container"><div class="grid" id="blueprints-grid"></div></div>
+        <div id="research-panel" class="upgrade-container">
+            <div class="sub-tabs" id="part-subtabs"></div>
+            <div class="grid" id="research-grid"></div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const MAX_VAL = 67000000000000;
+
+    // These point to the images you uploaded
+    const ASSETS = [
+        { id: 'bone', name: "Human Bone", base: 1200, img: "image_68cd5b.png", unlockCost: 0, unlocked: true },
+        { id: 'intestines', name: "Intestines", base: 15000, img: "image_68cd75.png", unlockCost: 500000, unlocked: false },
+        { id: 'liver', name: "Human Liver", base: 550000, img: "image_68caaf.png", unlockCost: 50000000, unlocked: false },
+        { id: 'heart', name: "Human Heart", base: 10000000, img: "image_68cd72.png", unlockCost: 10000000000, unlocked: false },
+        { id: 'brain', name: "Human Brain", base: 500000000, img: "image_68cd53.png", unlockCost: 5000000000000, unlocked: false }
+    ];
+
+    const infraTiers = [
+        { id:'i1', name: "Back-Alley Clinic", cost: 15, gps: 2 },
+        { id:'i2', name: "Coroner Bribes", cost: 500, gps: 25 },
+        { id:'i3', name: "Cold Storage Van", cost: 12000, gps: 180 },
+        { id:'i4', name: "Private Morgue", cost: 250000, gps: 1200 },
+        { id:'i5', name: "Underground Lab", cost: 5000000, gps: 15000 },
+        { id:'i6', name: "Deep Web Node", cost: 100000000, gps: 95000 },
+        { id:'i7', name: "International Port", cost: 5e9, gps: 1200000 },
+        { id:'i8', name: "Quantum Bio-Printer", cost: 1e12, gps: 85000000 },
+        { id:'i9', name: "Galactic Exchange", cost: 67e12, gps: 2e9 }
+    ];
+
+    const blueprintData = [
+        { id: 'bone', name: "Skeletal Schematics", cost: 100000, desc: "Unlock R&D for Bone Mods" },
+        { id: 'intestines', name: "Visceral Blueprints", cost: 5000000, desc: "Unlock R&D for Intestine Mods" },
+        { id: 'liver', name: "Hepatic Maps", cost: 250000000, desc: "Unlock R&D for Liver Mods" },
+        { id: 'heart', name: "Cardiac Codes", cost: 50e9, desc: "Unlock R&D for Heart Mods" },
+        { id: 'brain', name: "Neural Architecture", cost: 67e12, desc: "Unlock R&D for Brain Mods" }
+    ];
+
+    const researchData = {};
+    ASSETS.forEach(asset => {
+        researchData[asset.id] = Array.from({length: 32}, (_, i) => ({
+            name: `${asset.name} Mod #${i+1}`,
+            cost: Math.min(MAX_VAL, asset.base * Math.pow(5.5, i + 1)),
+            mult: 1.8 + (i * 0.4)
+        }));
+    });
+
+    let state = { cash: 0, assetIdx: 0, progress: 0, activeSubTab: 'bone', ownedResearch: {}, ownedBlueprints: [], infraCounts: {} };
+    let lastRenderCash = -1;
+
+    function format(n) {
+        if (n >= 1e12) return (n/1e12).toFixed(2) + "T";
+        if (n >= 1e9) return (n/1e9).toFixed(2) + "B";
+        if (n >= 1e6) return (n/1e6).toFixed(2) + "M";
+        if (n >= 1e3) return (n/1e3).toFixed(2) + "k";
+        return Math.floor(n);
+    }
+
+    function clickAsset(event) {
+        let a = ASSETS[state.assetIdx];
+        if (!a.unlocked) return;
+        state.progress += 25;
+        if (state.progress >= 100) {
+            let val = a.base;
+            (state.ownedResearch[a.id] || []).forEach(idx => val *= researchData[a.id][idx].mult);
+            state.cash += val; state.progress = 0;
+            createFloat(event.clientX, event.clientY, `+$${format(val)}`);
+        }
+    }
+
+    function buyInfra(idx) {
+        const item = infraTiers[idx];
+        const count = state.infraCounts[item.id] || 0;
+        let cost = Math.min(MAX_VAL, item.cost * Math.pow(1.3, count));
+        if (state.cash >= cost) { state.cash -= cost; state.infraCounts[item.id] = count + 1; forceUpdateUI(); }
+    }
+
+    function buyBlueprint(idx) {
+        const bp = blueprintData[idx];
+        if (state.cash >= bp.cost && !state.ownedBlueprints.includes(bp.id)) {
+            state.cash -= bp.cost; state.ownedBlueprints.push(bp.id); forceUpdateUI();
+        }
+    }
+
+    function buyResearch(assetId, idx) {
+        let r = researchData[assetId][idx];
+        if (state.cash >= r.cost && !(state.ownedResearch[assetId] || []).includes(idx)) {
+            state.cash -= r.cost;
+            if (!state.ownedResearch[assetId]) state.ownedResearch[assetId] = [];
+            state.ownedResearch[assetId].push(idx);
+            forceUpdateUI();
+        }
+    }
+
+    function renderGrids() {
+        const currentTotal = Math.floor(Math.log10(state.cash + 1) * 10);
+        if (currentTotal === lastRenderCash) return;
+        lastRenderCash = currentTotal;
+
+        document.getElementById('logistics-grid').innerHTML = infraTiers.map((u, i) => {
+            const count = state.infraCounts[u.id] || 0;
+            let cost = Math.min(MAX_VAL, u.cost * Math.pow(1.3, count));
+            return `<div class="card ${state.cash >= cost ? 'affordable' : ''}" onclick="buyInfra(${i})">
+                <div class="name">${u.name} [Lvl ${count}]</div>
+                <div class="impact" style="color:var(--terminal)">+ $${format(u.gps)}/s revenue</div>
+                <div class="cost infra-cost">$${format(cost)}</div>
+            </div>`;
+        }).join('');
+
+        document.getElementById('blueprints-grid').innerHTML = blueprintData.map((bp, i) => {
+            const owned = state.ownedBlueprints.includes(bp.id);
+            return `<div class="card bp-card ${owned ? 'owned' : (state.cash >= bp.cost ? 'affordable' : '')}" onclick="buyBlueprint(${i})">
+                <div class="name">${bp.name}</div>
+                <div class="cost bp-cost">${owned ? 'OWNED' : '$'+format(bp.cost)}</div>
+            </div>`;
+        }).join('');
+
+        document.getElementById('part-subtabs').innerHTML = ASSETS.filter(a => a.unlocked).map(a => 
+            `<div class="sub-tab ${state.activeSubTab === a.id ? 'active' : ''}" onclick="setSubTab('${a.id}')">${a.name}</div>`
+        ).join('');
+
+        const hasBP = state.ownedBlueprints.includes(state.activeSubTab);
+        document.getElementById('research-grid').innerHTML = hasBP ? researchData[state.activeSubTab].map((r, i) => {
+            const owned = (state.ownedResearch[state.activeSubTab] || []).includes(i);
+            return `<div class="card res-card ${owned ? 'owned' : (state.cash >= r.cost ? 'affordable' : '')}" onclick="buyResearch('${state.activeSubTab}', ${i})">
+                <div class="name">${r.name}</div>
+                <div class="impact" style="color:var(--neon-red)">Yield Multiplier: x${r.mult.toFixed(2)}</div>
+                <div class="cost res-cost">${owned ? 'ACTIVE' : '$'+format(r.cost)}</div>
+            </div>`;
+        }).join('') : `<div style="grid-column: span 2; text-align:center; padding:50px; color:#444;">BLUEPRINT REQUIRED</div>`;
+    }
+
+    function forceUpdateUI() { lastRenderCash = -1; updateAssetUI(); }
+
+    function updateAssetUI() {
+        let a = ASSETS[state.assetIdx];
+        // This targets the specific filenames you provided
+        document.getElementById('img-target').innerHTML = `<img src="${a.img}" alt="${a.name}">`;
+        document.getElementById('asset-name').innerText = a.unlocked ? a.name.toUpperCase() : "RESTRICTED";
+        document.getElementById('lock-overlay').innerHTML = a.unlocked ? '' : `<button style="background:var(--neon-red);color:white;border:none;padding:10px;cursor:pointer;font-weight:900;" onclick="unlockAsset()">ACQUIRE: $${format(a.unlockCost)}</button>`;
+        renderGrids();
+    }
+
+    function unlockAsset() {
+        let a = ASSETS[state.assetIdx];
+        if (state.cash >= a.unlockCost) { state.cash -= a.unlockCost; a.unlocked = true; forceUpdateUI(); }
+    }
+
+    function changeAsset(dir) { state.assetIdx = (state.assetIdx + dir + ASSETS.length) % ASSETS.length; forceUpdateUI(); }
+    function setMainTab(id) { document.querySelectorAll('.tab, .upgrade-container').forEach(el => el.classList.remove('active')); document.getElementById(id + '-panel').classList.add('active'); document.querySelector(`.tab[onclick*="${id}"]`).classList.add('active'); }
+    function setSubTab(id) { state.activeSubTab = id; forceUpdateUI(); }
+
+    function createFloat(x, y, txt) {
+        const d = document.createElement('div'); d.className = 'float';
+        d.style.left = x + 'px'; d.style.top = y + 'px'; d.innerText = txt;
+        document.body.appendChild(d); setTimeout(() => d.remove(), 600);
+    }
+
+    setInterval(() => {
+        let gps = 0; infraTiers.forEach(t => gps += (t.gps * (state.infraCounts[t.id] || 0)));
+        state.cash += gps / 10;
+        document.getElementById('cash').innerText = `$${format(state.cash)}`;
+        document.getElementById('gps').innerText = `$${format(gps)}/s`;
+        document.getElementById('prog-fill').style.width = state.progress + "%";
+        renderGrids(); 
+    }, 100);
+
+    updateAssetUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rock Tycoon</title>
+    <link rel="stylesheet" href="style2.css">
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="left-panel">
+            <h1>Rock Tycoon</h1>
+            <div id="score-display"><span id="rock-count">0</span></div>
+            <div id="tps-display"><span id="tps-count">0.0</span> rocks / second</div>
+            <button id="rock-btn">🪨</button>
+            
+            <div class="stats-box">
+                <p>Mining Power: <span id="click-power-display">1</span></p>
+                <p>Tech Efficiency: <span id="global-mult-display">1x</span></p>
+                <p>Prestige Bonus: <span id="prestige-display" style="color: #ce93d8;">+0%</span></p>
+                <p>Total Clicks: <span id="total-clicks-display">0</span></p>
+            </div>
+        </div>
+
+        <div id="right-panel">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('buildings')">Excavation Tech</button>
+                <button class="tab-btn" onclick="switchTab('upgrades')">Geological Research</button>
+            </div>
+
+            <div id="buildings-tab" class="tab-content active">
+                <div id="buildings-container"></div>
+            </div>
+
+            <div id="upgrades-tab" class="tab-content">
+                <p style="color: var(--accent); margin-top: 0; font-size: 14px; margin-bottom: 20px;">Research new technologies to permanently boost your mining empire.</p>
+                <div id="upgrades-container"></div>
+            </div>
+
+            <div class="system-controls">
+                <button id="prestige-btn" class="sys-btn btn-prestige disabled" onclick="prestige()">Ascend (Needs 1 Billion)</button>
+                <button class="sys-btn btn-transfer" onclick="exportSave()">Export</button>
+                <button class="sys-btn btn-transfer" onclick="importSave()">Import</button>
+                <button class="sys-btn btn-reset" onclick="resetGame()">Wipe</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="rock.js"></script>
+</body>
+</html>
